@@ -1,0 +1,6 @@
+{
+  "name": "iLearn Global",
+  "description": "High-fidelity, elegant, and fully responsive recreation of the iLearn Global online training and LMS platform, optimized for mobile and tablet devices with comprehensive courses, interactive demo portal, and CPD compliance resources.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
