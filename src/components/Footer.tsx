@@ -29,6 +29,7 @@ export default function Footer({ onNavigate }: FooterProps) {
     { id: 'courses', label: 'Classes' },
     { id: 'events', label: 'Events' },
     { id: 'contact', label: 'Contact Us' },
+    { id: 'agents', label: 'Agent Partners' },
     { id: 'admin', label: 'Admin Portal 🔒' }
   ];
 

@@ -3,9 +3,10 @@ import { ArrowRight } from 'lucide-react';
 
 interface HeroProps {
   onNavigate: (tabId: string) => void;
+  onOpenBookingModal: () => void;
 }
 
-export default function Hero({ onNavigate }: HeroProps) {
+export default function Hero({ onNavigate, onOpenBookingModal }: HeroProps) {
   return (
     <section 
       id="homepage-hero-section"
@@ -60,7 +61,7 @@ export default function Hero({ onNavigate }: HeroProps) {
             >
               <button
                 id="hero-premium-pill-cta"
-                onClick={() => onNavigate('courses')}
+                onClick={onOpenBookingModal}
                 className="group w-full sm:w-auto inline-flex items-center justify-between bg-white text-indigo-950 font-bold px-6 py-3.5 sm:py-4 rounded-full shadow-[0_15px_30px_rgba(255,255,255,0.1)] hover:shadow-[0_20px_40px_rgba(255,255,255,0.2)] hover:bg-slate-50 transition-all duration-300 transform hover:-translate-y-0.5 cursor-pointer max-w-max text-sm sm:text-base border border-transparent"
               >
                 <span className="mr-6 pl-2 tracking-wide text-[#1c1a55]">Book Your Session Today</span>

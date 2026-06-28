@@ -29,6 +29,7 @@ export default function Header({ activeTab, setActiveTab }: HeaderProps) {
     { id: 'about', label: 'About Us' },
     { id: 'courses', label: 'Classes' },
     { id: 'events', label: 'Events' },
+    { id: 'itravel', label: 'iTravel', href: 'https://itravel.ilearn-global.com/' },
     { id: 'contact', label: 'Contact Us' }
   ];
 
@@ -66,20 +67,33 @@ export default function Header({ activeTab, setActiveTab }: HeaderProps) {
  
           {/* Desktop Navigation */}
           <nav id="desktop-nav-menu" className="hidden lg:flex items-center space-x-1">
-            {navItems.map((item) => (
-              <button
-                key={item.id}
-                id={`nav-${item.id}-btn`}
-                onClick={() => handleNavClick(item.id)}
-                className={`px-4.5 py-2 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer ${
-                  activeTab === item.id 
-                    ? 'text-indigo-600 bg-indigo-50/70 font-bold' 
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                }`}
-              >
-                {item.label}
-              </button>
-            ))}
+            {navItems.map((item) => 
+              item.href ? (
+                <a
+                  key={item.id}
+                  id={`nav-${item.id}-link`}
+                  href={item.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-4.5 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-all duration-200 cursor-pointer"
+                >
+                  {item.label}
+                </a>
+              ) : (
+                <button
+                  key={item.id}
+                  id={`nav-${item.id}-btn`}
+                  onClick={() => handleNavClick(item.id)}
+                  className={`px-4.5 py-2 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer ${
+                    activeTab === item.id 
+                      ? 'text-indigo-600 bg-indigo-50/70 font-bold' 
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                  }`}
+                >
+                  {item.label}
+                </button>
+              )
+            )}
           </nav>
  
           {/* Controls Panel */}
@@ -122,20 +136,34 @@ export default function Header({ activeTab, setActiveTab }: HeaderProps) {
           >
             <div className="px-4 pt-3 pb-6 space-y-3">
               <div className="grid grid-cols-1 gap-1">
-                {navItems.map((item) => (
-                  <button
-                    key={item.id}
-                    id={`mobile-nav-${item.id}-btn`}
-                    onClick={() => handleNavClick(item.id)}
-                    className={`w-full text-left px-4 py-3 rounded-xl text-base font-semibold transition-colors ${
-                      activeTab === item.id 
-                        ? 'text-indigo-600 bg-indigo-50 border-l-4 border-indigo-600' 
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                    }`}
-                  >
-                    {item.label}
-                  </button>
-                ))}
+                {navItems.map((item) => 
+                  item.href ? (
+                    <a
+                      key={item.id}
+                      id={`mobile-nav-${item.id}-link`}
+                      href={item.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="w-full block text-left px-4 py-3 rounded-xl text-base font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors"
+                    >
+                      {item.label}
+                    </a>
+                  ) : (
+                    <button
+                      key={item.id}
+                      id={`mobile-nav-${item.id}-btn`}
+                      onClick={() => handleNavClick(item.id)}
+                      className={`w-full text-left px-4 py-3 rounded-xl text-base font-semibold transition-colors ${
+                        activeTab === item.id 
+                          ? 'text-indigo-600 bg-indigo-50 border-l-4 border-indigo-600' 
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                      }`}
+                    >
+                      {item.label}
+                    </button>
+                  )
+                )}
               </div>
               
               <div className="pt-4 border-t border-slate-150 space-y-4 px-2">

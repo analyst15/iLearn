@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import Header from './components/Header';
 import Hero from './components/Hero';
@@ -9,7 +9,9 @@ import Events from './components/Events';
 import Contact from './components/Contact';
 import Footer from './components/Footer';
 import AdminPortal from './components/AdminPortal';
-import { IlearnEvent } from './types';
+import RegisterPage from './components/RegisterPage';
+import AgentRegistration from './components/AgentRegistration';
+import { IlearnEvent, SessionBooking } from './types';
 import { COURSES, TESTIMONIALS, STATS, TRUST_PARTNERS, PARTNER_LOGOS } from './data';
 import { 
   Award, ShieldCheck, Heart, Users, Laptop, Briefcase, 
@@ -18,7 +20,60 @@ import {
 } from 'lucide-react';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<string>('home');
+  const [activeTab, setActiveTabState] = useState<string>(() => {
+    const path = window.location.pathname.replace(/^\/|\/$/g, '').toLowerCase();
+    if (path === 'register') return 'register';
+    if (path === 'agents') return 'agents';
+    if (path === 'courses' || path === 'classes') return 'courses';
+    if (path === 'events') return 'events';
+    if (path === 'about') return 'about';
+    if (path === 'contact') return 'contact';
+    if (path === 'admin') return 'admin';
+    if (path === 'lms') return 'lms';
+    return 'home';
+  });
+
+  const setActiveTab = (tab: string) => {
+    setActiveTabState(tab);
+    let pathName = '/';
+    if (tab === 'courses') {
+      pathName = '/classes';
+    } else if (tab !== 'home') {
+      pathName = `/${tab}`;
+    }
+    
+    if (window.location.pathname !== pathName) {
+      window.history.pushState(null, '', pathName);
+    }
+  };
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const path = window.location.pathname.replace(/^\/|\/$/g, '').toLowerCase();
+      if (path === 'register') {
+        setActiveTabState('register');
+      } else if (path === 'agents') {
+        setActiveTabState('agents');
+      } else if (path === 'courses' || path === 'classes') {
+        setActiveTabState('courses');
+      } else if (path === 'events') {
+        setActiveTabState('events');
+      } else if (path === 'about') {
+        setActiveTabState('about');
+      } else if (path === 'contact') {
+        setActiveTabState('contact');
+      } else if (path === 'admin') {
+        setActiveTabState('admin');
+      } else if (path === 'lms') {
+        setActiveTabState('lms');
+      } else {
+        setActiveTabState('home');
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   const [searchOpen, setSearchOpen] = useState(false);
   const [globalSearchQuery, setGlobalSearchQuery] = useState('');
 
@@ -42,6 +97,33 @@ export default function App() {
     const updated = events.filter(e => e.id !== id);
     setEvents(updated);
     localStorage.setItem('ilearn_dynamic_events', JSON.stringify(updated));
+  };
+
+  // Manage session booking registrations dynamically
+  const [bookings, setBookings] = useState<SessionBooking[]>(() => {
+    try {
+      const saved = localStorage.getItem('ilearn_session_bookings');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const handleAddBooking = (formData: Omit<SessionBooking, 'id' | 'createdAt'>) => {
+    const newBooking: SessionBooking = {
+      ...formData,
+      id: `booking-${Date.now()}`,
+      createdAt: new Date().toISOString(),
+    };
+    const updated = [newBooking, ...bookings];
+    setBookings(updated);
+    localStorage.setItem('ilearn_session_bookings', JSON.stringify(updated));
+  };
+
+  const handleDeleteBooking = (id: string) => {
+    const updated = bookings.filter((b) => b.id !== id);
+    setBookings(updated);
+    localStorage.setItem('ilearn_session_bookings', JSON.stringify(updated));
   };
 
   // Find course results dynamically in search overlay
@@ -79,7 +161,7 @@ export default function App() {
               transition={{ duration: 0.3 }}
             >
               {/* Marketing Landing Hero banner */}
-              <Hero onNavigate={handleQuickNavigate} />
+              <Hero onNavigate={handleQuickNavigate} onOpenBookingModal={() => handleQuickNavigate('register')} />
 
               {/* STATS COUNT GRID SECTION */}
               <section id="metrics-counting-bar" className="relative -mt-10 z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -418,6 +500,8 @@ export default function App() {
                 onAddEvent={handleAddEvent}
                 onDeleteEvent={handleDeleteEvent}
                 onNavigate={handleQuickNavigate}
+                bookings={bookings}
+                onDeleteBooking={handleDeleteBooking}
               />
             </motion.div>
           )}
@@ -447,6 +531,37 @@ export default function App() {
               className="pt-14 sm:pt-16 lg:pt-20"
             >
               <Contact />
+            </motion.div>
+          )}
+
+          {/* TAB: REGISTER PAGE */}
+          {activeTab === 'register' && (
+            <motion.div
+              key="register-view"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.25 }}
+              className="pt-14 sm:pt-16 lg:pt-20"
+            >
+              <RegisterPage 
+                onAddBooking={handleAddBooking} 
+                onNavigate={handleQuickNavigate} 
+              />
+            </motion.div>
+          )}
+
+          {/* TAB: AGENTS REFERRAL PAGE */}
+          {activeTab === 'agents' && (
+            <motion.div
+              key="agents-view"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.25 }}
+              className="pt-14 sm:pt-16 lg:pt-20"
+            >
+              <AgentRegistration />
             </motion.div>
           )}
 

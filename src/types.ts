@@ -44,3 +44,15 @@ export interface IlearnEvent {
   spotsLeft: number;
   description: string;
 }
+
+export interface SessionBooking {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  service: string;
+  residence: string;
+  message?: string;
+  createdAt: string;
+}

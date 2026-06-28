@@ -12,10 +12,43 @@ export default function Contact() {
   });
   
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
+    setSubmitting(true);
+    setSubmitError('');
+
+    try {
+      const response = await fetch("/api/send-email", {
+        method: "POST",
+        headers: { 
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          type: "contact",
+          data: {
+            name: formData.name,
+            email: formData.email,
+            phone: formData.phone || 'Not Provided',
+            program: programsList.find(p => p.value === formData.program)?.label || formData.program,
+            message: formData.message
+          }
+        })
+      });
+
+      const resData = await response.json();
+      if (response.ok && resData.success) {
+        setSubmitted(true);
+      } else {
+        setSubmitError(resData.error || 'Failed to send message. Please try again.');
+      }
+    } catch (err) {
+      setSubmitError('An error occurred. Please check your internet connection and try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleReset = () => {
@@ -27,6 +60,7 @@ export default function Contact() {
       message: ''
     });
     setSubmitted(false);
+    setSubmitError('');
   };
 
   const programsList = [
@@ -82,10 +116,11 @@ export default function Contact() {
                     <input
                       type="text"
                       required
+                      disabled={submitting}
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       placeholder="E.g. Dr. Lynn Abungu"
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white transition-all"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white transition-all disabled:opacity-60"
                     />
                   </div>
 
@@ -97,10 +132,11 @@ export default function Contact() {
                     <input
                       type="email"
                       required
+                      disabled={submitting}
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       placeholder="E.g. lynn@example.com"
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white transition-all"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white transition-all disabled:opacity-60"
                     />
                   </div>
 
@@ -115,10 +151,11 @@ export default function Contact() {
                     </label>
                     <input
                       type="tel"
+                      disabled={submitting}
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                       placeholder="E.g. +254 700 000 000"
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white transition-all"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white transition-all disabled:opacity-60"
                     />
                   </div>
 
@@ -128,9 +165,10 @@ export default function Contact() {
                       Class Interest
                     </label>
                     <select
+                      disabled={submitting}
                       value={formData.program}
                       onChange={(e) => setFormData({ ...formData, program: e.target.value })}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-xs sm:text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600 cursor-pointer"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-xs sm:text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600 cursor-pointer disabled:opacity-60"
                     >
                       {programsList.map((item) => (
                         <option key={item.value} value={item.value}>
@@ -149,21 +187,39 @@ export default function Contact() {
                   </label>
                   <textarea
                     required
+                    disabled={submitting}
                     rows={5}
                     value={formData.message}
                     onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                     placeholder="Write your details, score goals, or schedules request here..."
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white transition-all resize-none"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white transition-all resize-none disabled:opacity-60"
                   />
                 </div>
+
+                {submitError && (
+                  <div className="bg-rose-50 border border-rose-100 text-rose-600 text-xs font-semibold rounded-xl p-3.5 flex items-start gap-2.5">
+                    <span className="font-extrabold text-rose-500">Error:</span>
+                    <span>{submitError}</span>
+                  </div>
+                )}
 
                 {/* Form submit CTA */}
                 <button
                   type="submit"
-                  className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs sm:text-sm font-extrabold uppercase tracking-widest shadow-md shadow-indigo-100 hover:shadow-lg hover:shadow-indigo-200 cursor-pointer transition-all active:scale-98 flex items-center justify-center space-x-2"
+                  disabled={submitting}
+                  className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs sm:text-sm font-extrabold uppercase tracking-widest shadow-md shadow-indigo-100 hover:shadow-lg hover:shadow-indigo-200 cursor-pointer transition-all active:scale-98 flex items-center justify-center space-x-2 disabled:bg-indigo-400 disabled:cursor-not-allowed"
                 >
-                  <Send className="h-4 w-4" />
-                  <span>Send Message</span>
+                  {submitting ? (
+                    <>
+                      <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Transmitting Message...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-4 w-4" />
+                      <span>Send Message</span>
+                    </>
+                  )}
                 </button>
 
               </motion.form>
