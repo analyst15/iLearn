@@ -71,6 +71,9 @@ const transporter = nodemailer.createTransport({
     user: gmailUser,
     pass: gmailPass,
   },
+  connectionTimeout: 2500, // 2.5 seconds timeout
+  greetingTimeout: 2500,   // 2.5 seconds timeout
+  socketTimeout: 3000,     // 3 seconds socket timeout
 });
 
 // API endpoint to send emails
@@ -232,64 +235,74 @@ app.post("/api/send-email", async (req, res) => {
     return res.status(400).json({ success: false, error: "Invalid form type" });
   }
 
+  // 1. If agent-registration, save locally and sync in real-time to Google Sheets FIRST
+  let newReferral: any = null;
+  if (type === "agent-registration") {
+    newReferral = {
+      id: `ref-${Date.now()}`,
+      createdAt: new Date().toISOString(),
+      ...data
+    };
+    
+    try {
+      const referrals = getReferrals();
+      referrals.unshift(newReferral);
+      saveReferrals(referrals);
+    } catch (saveErr) {
+      console.error("Error saving referral locally:", saveErr);
+    }
+
+    // Sync to central Google Sheets in real-time if URL is configured!
+    try {
+      const settings = getSettings();
+      if (settings.googleScriptUrl) {
+        console.log("Syncing referral to central Google Sheet in real-time...", settings.googleScriptUrl);
+        fetch(settings.googleScriptUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(newReferral)
+        })
+        .then(async (sheetsRes) => {
+          const txt = await sheetsRes.text();
+          console.log("Central Sheets Sync Response:", txt);
+        })
+        .catch((err) => {
+          console.error("Central Sheets Sync Network Error:", err);
+        });
+      }
+    } catch (syncErr) {
+      console.error("Error initiating central Google Sheet sync:", syncErr);
+    }
+  }
+
+  // 2. Attempt to send email, but do not fail the request or crash the function if it fails/times out
+  let emailSent = false;
+  let messageId = "";
   try {
     const mailOptions = {
       from: `"iLearn Global Notifications" <${gmailUser}>`,
       to: "techanalyst41@gmail.com",
-      replyTo: data.email,
+      replyTo: data.email || (newReferral ? newReferral.agentsEmail : undefined),
       subject: subject,
       html: htmlContent,
     };
 
     const info = await transporter.sendMail(mailOptions);
     console.log("Email sent successfully:", info.messageId);
-
-    // Save referral locally if type is agent-registration
-    if (type === "agent-registration") {
-      const newReferral = {
-        id: `ref-${Date.now()}`,
-        createdAt: new Date().toISOString(),
-        ...data
-      };
-      
-      try {
-        const referrals = getReferrals();
-        referrals.unshift(newReferral);
-        saveReferrals(referrals);
-      } catch (saveErr) {
-        console.error("Error saving referral locally:", saveErr);
-      }
-
-      // Sync to central Google Sheets in real-time if URL is configured!
-      try {
-        const settings = getSettings();
-        if (settings.googleScriptUrl) {
-          console.log("Syncing referral to central Google Sheet in real-time...", settings.googleScriptUrl);
-          fetch(settings.googleScriptUrl, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(newReferral)
-          })
-          .then(async (sheetsRes) => {
-            const txt = await sheetsRes.text();
-            console.log("Central Sheets Sync Response:", txt);
-          })
-          .catch((err) => {
-            console.error("Central Sheets Sync Network Error:", err);
-          });
-        }
-      } catch (syncErr) {
-        console.error("Error initiating central Google Sheet sync:", syncErr);
-      }
-    }
-
-    return res.status(200).json({ success: true, messageId: info.messageId });
+    emailSent = true;
+    messageId = info.messageId;
   } catch (error: any) {
-    console.error("Error sending email:", error);
-    return res.status(500).json({ success: false, error: error.message || "Failed to send email" });
+    console.error("Nodemailer failed or timed out, proceeding gracefully:", error);
   }
+
+  return res.status(200).json({ 
+    success: true, 
+    emailSent, 
+    messageId,
+    message: emailSent ? "Successfully processed and notification email sent." : "Processed successfully (email delivery offline)."
+  });
 });
 
 // GET all agent referrals for Admin Portal
