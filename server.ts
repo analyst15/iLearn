@@ -1,6 +1,5 @@
 import express from "express";
 import path from "path";
-import { createServer as createViteServer } from "vite";
 import nodemailer from "nodemailer";
 import dotenv from "dotenv";
 import fs from "fs";
@@ -12,8 +11,13 @@ const PORT = 3000;
 
 app.use(express.json());
 
-const REFERRALS_FILE = path.join(process.cwd(), "referrals.json");
-const SETTINGS_FILE = path.join(process.cwd(), "settings.json");
+const isVercel = !!process.env.VERCEL;
+const REFERRALS_FILE = isVercel 
+  ? path.join("/tmp", "referrals.json")
+  : path.join(process.cwd(), "referrals.json");
+const SETTINGS_FILE = isVercel
+  ? path.join("/tmp", "settings.json")
+  : path.join(process.cwd(), "settings.json");
 
 function getReferrals() {
   try {
@@ -367,6 +371,7 @@ app.post("/api/sync-to-central", async (req, res) => {
 // Vite middleware for development or Static Server for production
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
+    const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
